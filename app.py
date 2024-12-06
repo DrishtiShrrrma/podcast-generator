@@ -240,9 +240,9 @@ with st.sidebar:
     )
     st.markdown("### Steps:")
     st.markdown("1. Upload documents.")
-    st.markdown("2. Generate summaries.")
+    st.markdown("2. Generate summary.")
     st.markdown("3. Ask questions.")
-    st.markdown("4. Create podcasts.")
+    st.markdown("4. Create podcast.")
 
 # Streamlit UI
 # Sidebar
@@ -268,8 +268,8 @@ uploaded_files = st.file_uploader("Upload files (PDF, TXT, CSV)", accept_multipl
 
 if st.button("Process Documents"):
     if uploaded_files:
-        # Process the uploaded files
-        result = st.session_state.rag_system.process_documents(uploaded_files)
+        with st.spinner("Processing documents, please wait..."):
+            result = st.session_state.rag_system.process_documents(uploaded_files)
         if "successfully" in result:
             st.success(result)
         else:
@@ -277,7 +277,6 @@ if st.button("Process Documents"):
     else:
         st.warning("No files uploaded.")
 
-    
 # Step 2: Generate Summaries
 st.subheader("Step 2: Generate Summaries")
 st.write("Select Summary Language:")
@@ -291,12 +290,16 @@ summary_language = st.radio(
 
 if st.button("Generate Summary"):
     if hasattr(st.session_state.rag_system, "document_text") and st.session_state.rag_system.document_text:
-        summary = st.session_state.rag_system.generate_summary(st.session_state.rag_system.document_text, summary_language)
-        st.session_state.rag_system.document_summary = summary
-        st.text_area("Document Summary", summary, height=200)
+        with st.spinner("Generating summary, please wait..."):
+            summary = st.session_state.rag_system.generate_summary(st.session_state.rag_system.document_text, summary_language)
+        if summary:
+            st.session_state.rag_system.document_summary = summary
+            st.text_area("Document Summary", summary, height=200)
+            st.success("Summary generated successfully!")
+        else:
+            st.error("Failed to generate summary.")
     else:
         st.info("Please process documents first to generate summaries.")
-
 
 # Step 3: Ask Questions
 st.subheader("Step 3: Ask Questions")
@@ -313,8 +316,8 @@ if st.session_state.rag_system.qa_chain:
     history = []
     user_question = st.text_input("Ask a question:")
     if st.button("Submit Question"):
-        # Handle the user query
-        history = st.session_state.rag_system.handle_query(user_question, history, qa_language)
+        with st.spinner("Answering your question, please wait..."):
+            history = st.session_state.rag_system.handle_query(user_question, history, qa_language)
         for question, answer in history:
             st.chat_message("user").write(question)
             st.chat_message("assistant").write(answer)
@@ -334,7 +337,8 @@ podcast_language = st.radio(
 
 if st.session_state.rag_system.document_summary:
     if st.button("Generate Podcast"):
-        script, audio_path = st.session_state.rag_system.create_podcast(podcast_language)
+        with st.spinner("Generating podcast, please wait..."):
+            script, audio_path = st.session_state.rag_system.create_podcast(podcast_language)
         if audio_path:
             st.text_area("Generated Podcast Script", script, height=200)
             st.audio(audio_path, format="audio/mp3")
